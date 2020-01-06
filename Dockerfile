@@ -4,7 +4,7 @@ COPY project /app/project
 WORKDIR /app
 RUN sbt update test:update
 COPY . .
-RUN sbt formatTest compile test stage
+RUN sbt compile test stage
 
 
 FROM openjdk:8
