@@ -37,7 +37,8 @@ private[exporter] object CKMSQuantileActor {
               Behaviors.stopped
           }
         }
-        timers.startTimerWithFixedDelay("rotate", Rotate(), rotationTime)
+        //timers.startTimerWithFixedDelay("rotate", Rotate(), rotationTime)
+        timers.startPeriodicTimer("rotate", Rotate(), rotationTime)
         beh(Seq.fill(numberOfBuckets)(new CKMSQuantiles(quantiles)))
       }
     }

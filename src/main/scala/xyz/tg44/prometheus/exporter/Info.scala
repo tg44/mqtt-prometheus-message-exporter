@@ -22,6 +22,7 @@ object Info {
     import akka.actor.typed.scaladsl.adapter._
     import akka.actor.typed.scaladsl.AskPattern._
     implicit val typedSystem = as.toTyped
+    implicit val scheduler = typedSystem.scheduler
     val actor = as.spawnAnonymous(LabeledMetricActor(name, description, Gauge.mType)(mm => new Gauge(as.spawnAnonymous(GaugeActor(mm, registry)))))
     actor.ask((ar: ActorRef[Response[Gauge]]) => Select[Gauge](info, ar)).map(_.m.set(1))
     new Info(actor)

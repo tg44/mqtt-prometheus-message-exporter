@@ -12,6 +12,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class LabeledMetric[M <: Metric, L <: Enumeration] private[exporter] (actor: ActorRef[Command])(implicit ec: ExecutionContext, as: classic.ActorSystem) extends Metric {
   import akka.actor.typed.scaladsl.adapter._
   implicit val typedSystem = as.toTyped
+  implicit val scheduler = typedSystem.scheduler
 
   def get(selector: Map[L#Value, String])(implicit to: Timeout): Future[M] = {
     actor.ask((ar: ActorRef[Response[M]]) => Select[M](transformSelector(selector), ar)).map(_.m)

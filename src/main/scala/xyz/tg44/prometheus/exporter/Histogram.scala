@@ -25,6 +25,7 @@ class Histogram private[exporter] (
   val range = originalRange.sorted(Ordering[Double].reverse)
   import akka.actor.typed.scaladsl.adapter._
   implicit val typedSystem = as.toTyped
+  implicit val scheduler = typedSystem.scheduler
 
   def observe(amount: Double)(implicit clock: Clock[Id]): Unit = {
     range.takeWhile(amount <= _).foreach{ b =>
