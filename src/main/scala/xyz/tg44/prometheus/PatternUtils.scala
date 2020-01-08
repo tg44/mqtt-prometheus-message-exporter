@@ -1,4 +1,4 @@
-package xyz.tg44.prometheus.mqtt
+package xyz.tg44.prometheus
 
 import spray.json._
 import xyz.tg44.prometheus.Config.PatternConf
@@ -8,7 +8,12 @@ import xyz.tg44.prometheus.exporter.Registry.MetricMeta
 import scala.annotation.tailrec
 import scala.util.Try
 
-object Utils {
+object PatternUtils {
+  def isPrefix(s: String): Boolean = (s == "[[prefix]]")
+  def isPrefixes(s: String): Boolean = (s == "[[prefixes]]")
+  def isLabel(s: String): Boolean = (s.startsWith("<<") && s.endsWith(">>"))
+  def isSyntax(s: String): Boolean = isPrefix(s) || isPrefixes(s) || isLabel(s)
+
   def flatten(topic: String, payload: String): List[(String, Double)] = {
     Try(payload.parseJson).toOption match {
       case Some(JsNumber(n)) => (topic -> n.doubleValue) :: Nil
@@ -33,9 +38,7 @@ object Utils {
       splitted
         .takeWhile(_ != "|")
         .map( p =>
-          if(p.startsWith("<<") && p.endsWith(">>")) {
-            "+"
-          } else if(p == "[[prefix]]"){
+          if(isLabel(p) || isPrefix(p)) {
             "+"
           } else {
             p
@@ -44,9 +47,17 @@ object Utils {
         .mkString("/")
     } else {
       if(splitted.length > 1) {
-        splitted.head + "/#"
+        if(isSyntax(splitted.head)) {
+          "#"
+        } else {
+          splitted.head + "/#"
+        }
       } else {
-        splitted.head
+        if(isSyntax(splitted.head)) {
+          "+"
+        } else {
+          splitted.head
+        }
       }
     }
   }
@@ -59,16 +70,15 @@ object Utils {
     def rec(patterns: List[String], paths: List[String], metrics: List[String], labels: Map[String, String]): Option[MetricMeta] = {
       patterns match {
         case h :: Nil if paths.size > 1 =>
-          if(h == "[[prefixes]]") {
-            metaForPatterns(metrics.reverse ++ paths, labels)
+          if(isPrefixes(h)) {
+            buildValidMeta(metrics.reverse ++ paths, labels)
           } else {
-            println("a")
             None
           }
         case h :: t =>
-          if(h == "[[prefix]]") {
+          if(isPrefix(h)) {
             rec(t, paths.tail, paths.head :: metrics, labels)
-          } else if(h.startsWith("<<") && h.endsWith(">>")) {
+          } else if(isLabel(h)) {
             val label = h.drop(2).dropRight(2)
             rec(t, paths.tail, metrics, labels + (label -> paths.head))
           } else if(h == paths.head){
@@ -77,7 +87,7 @@ object Utils {
             None
           }
         case Nil if paths.isEmpty =>
-          metaForPatterns(metrics.reverse, labels)
+          buildValidMeta(metrics.reverse, labels)
         case Nil =>
           None
       }
@@ -94,7 +104,7 @@ object Utils {
     prefixPathList.map(p => metaFromPatternAndPath(p.pattern, _, p.prefix)).foldLeft(Option.empty[MetricMeta])(_ orElse _(path))
   }
 
-  def metaForPatterns(metrics: List[String], labels: Map[String, String]): Option[MetricMeta] = {
+  def buildValidMeta(metrics: List[String], labels: Map[String, String]): Option[MetricMeta] = {
     def standardize(s: String): String = {
       s.replace(' ', '_').replace("[^A-Za-z0-9_]", "").trim.toLowerCase
     }

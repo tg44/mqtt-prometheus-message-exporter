@@ -4,36 +4,33 @@ import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
 
 import scala.io.Source
-import scala.util.{Try, Using}
+import scala.util.{Failure, Try, Using}
 import spray.json._
 
 object Config {
   private val logger = LoggerFactory.getLogger("Config")
   private val config = ConfigFactory.load()
 
-  def getConfigFileContent(): AppConfig = {
-    def handleFileReadError(ex: Throwable): Nothing = {
-      logger.error("There was an error during the config file read!", ex)
-      throw ex
-    }
-    def handleJsonParseError(ex: Throwable): Nothing = {
-      logger.error("There was an error during the config json parse!", ex)
-      throw ex
-    }
-    def handleJsonConvertError(ex: Throwable): Nothing = {
-      logger.error("There was an error during the config json structure parse!", ex)
-      throw ex
-    }
+  def getConfigFileContent(): Option[AppConfig] = {
     def parseJson(s: String) = {
-      Try(s.parseJson).fold(handleJsonParseError, convertJson)
+      Try(s.parseJson)
     }
     def convertJson(j: JsValue) = {
-      Try(j.convertTo[AppConfig]).fold(handleJsonConvertError, identity)
+      Try(j.convertTo[AppConfig])
     }
     val fileContent = Using(Source.fromFile(config.getString("configFileLocation")))(_.mkString)
-    val res = fileContent.fold(handleFileReadError, parseJson)
-    logger.info("Config file successfully parsed!")
-    res
+    val conf = for {
+      fc <- fileContent
+      json <- parseJson(fc)
+      conf <- convertJson(json)
+    } yield {
+      conf
+    }
+    conf match {
+      case Failure(ex) => logger.error("There was an error during the config file read or parse!", ex)
+      case _ => logger.info("Config file successfully parsed!")
+    }
+    conf.toOption
   }
 
   import spray.json.DefaultJsonProtocol._

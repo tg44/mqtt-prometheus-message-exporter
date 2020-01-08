@@ -1,4 +1,4 @@
-package xyz.tg44.prometheus.mqtt
+package xyz.tg44.prometheus
 
 import org.scalatest.{Matchers, WordSpecLike}
 import spray.json._
@@ -7,7 +7,7 @@ import scala.util.Try
 
 class MessageFlatterSpec extends WordSpecLike with Matchers {
 
-  import Utils._
+  import xyz.tg44.prometheus.PatternUtils._
 
   "flatten" should {
 
