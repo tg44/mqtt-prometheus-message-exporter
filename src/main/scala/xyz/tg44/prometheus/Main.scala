@@ -33,8 +33,8 @@ object Main extends App {
   val pathResolver: String => Option[MetricMeta] = PatternUtils.metaBuilder(appConf.patterns)
 
   var mqttSessionSettings = MqttSessionSettings()
-  if (appConf.mqtt.maxPacketSize.isDefined)
-    mqttSessionSettings = mqttSessionSettings.withMaxPacketSize(appConf.mqtt.maxPacketSize.get)
+  appConf.mqtt.maxPacketSize.foreach(maxPacketSize =>
+    mqttSessionSettings = mqttSessionSettings.withMaxPacketSize(maxPacketSize))
 
   val session = ActorMqttClientSession(mqttSessionSettings)
   val connection = Tcp().outgoingConnection(appConf.mqtt.host, appConf.mqtt.port)
