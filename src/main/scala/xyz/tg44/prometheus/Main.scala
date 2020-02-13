@@ -57,7 +57,12 @@ object Main extends App {
       .toMat(Sink.fromGraph(new PullableSink[String]()))(Keep.both).run
 
 
-  commands.offer(Command(Connect("prom-mqtt", ConnectFlags.CleanSession)))
+  private val connect: Connect =
+    if (appConf.mqtt.username != null)
+      Connect("prom-mqtt", ConnectFlags.CleanSession, appConf.mqtt.username, appConf.mqtt.password)
+    else
+      Connect("prom-mqtt", ConnectFlags.CleanSession)
+  commands.offer(Command(connect))
   appConf.patterns.foreach{ p =>
     val topicToConnect = PatternUtils.topicFromPattern(p.pattern)
     commands.offer(Command(Subscribe(topicToConnect)))
