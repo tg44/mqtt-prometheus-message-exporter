@@ -75,6 +75,10 @@ Examples:
 ## Config:
 For example config check the example.conf!
 
+`username`/`password` are not required. If you miss one of these fields the app will try to connect as an unauthenticated/guest client.
+
+`maxPacketSize` are not required. The default value is 4096.
+
 For working (and non working) pattern examples check the TopicParserSpec file,
  under the tests (or read the upper sections to understand them)!
 
