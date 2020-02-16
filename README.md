@@ -1,3 +1,5 @@
+[![Docker Build Status](https://img.shields.io/docker/cloud/build/tg44/mqtt-prometheus-message-exporter?style=flat-square)](https://hub.docker.com/r/tg44/mqtt-prometheus-message-exporter)
+
 # MQTT Prometheus Message Exporter
 
 It's a small service which will convert mqtt messages to prometheus metrics.
@@ -75,9 +77,11 @@ Examples:
 ## Config:
 For example config check the example.conf!
 
-`username`/`password` are not required. If you miss one of these fields the app will try to connect as an unauthenticated/guest client.
+`mqtt.username`/`mqtt.password` are not required. If you miss one of these fields the app will try to connect as an unauthenticated/guest client.
 
-`maxPacketSize` are not required. The default value is 4096.
+`mqtt.maxPacketSize` are not required. The default value is 4096.
+
+`selfMetrics` is an optional block, the exporter can export it's own uptime for debugging and crash checking reasons. 
 
 For working (and non working) pattern examples check the TopicParserSpec file,
  under the tests (or read the upper sections to understand them)!

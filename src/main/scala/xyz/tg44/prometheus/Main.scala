@@ -1,21 +1,16 @@
 package xyz.tg44.prometheus
 
-import akka.Done
 import akka.actor.ActorSystem
 import akka.custom.PullableSink
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
-import akka.stream.alpakka.mqtt.streaming.scaladsl.{ActorMqttClientSession, Mqtt}
-import akka.stream.alpakka.mqtt.streaming._
-import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source, SourceQueueWithComplete, Tcp}
-import akka.stream.{ActorMaterializer, OverflowStrategy}
-import akka.util.ByteString
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Keep, Sink}
 import org.slf4j.LoggerFactory
 import xyz.tg44.prometheus.Config.AppConfig
-import xyz.tg44.prometheus.exporter.Registry.{Line, MetricMeta}
 import xyz.tg44.prometheus.exporter.{PrometheusRenderer, Registry}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success}
 
 object Main extends App {
@@ -30,51 +25,21 @@ object Main extends App {
 
   val appConf: AppConfig = Config.getConfigFileContent().fold{stopTheApp(); throw new Exception("Config read error")}{identity}
 
-  val pathResolver: String => Option[MetricMeta] = PatternUtils.metaBuilder(appConf.patterns)
 
-  val mqttSessionSettings = appConf.mqtt.maxPacketSize
-    .map(maxPacketSize =>  MqttSessionSettings().withMaxPacketSize(maxPacketSize))
-    .getOrElse(MqttSessionSettings())
+  val mqttHelper = new MqttHelper(appConf)
 
-  val session = ActorMqttClientSession(mqttSessionSettings)
-  val connection = Tcp().outgoingConnection(appConf.mqtt.host, appConf.mqtt.port)
-  val ((commands, done), pullable): ((SourceQueueWithComplete[Command[Nothing]], Future[Done]), SinkQueueWithCancel[String]) =
-    Source
-      .queue(2, OverflowStrategy.fail)
-      .via(
-        Mqtt
-        .clientSessionFlow(session, ByteString("prom-mqtt"))
-        .join(connection)
-      )
-      .watchTermination()(Keep.both)
-      //.map{e => logger.info(e.toString); e}
-      .collect {
-        case Right(Event(p: Publish, _)) => (p.topicName, p.payload.utf8String)
-      }
-      .mapConcat(c => PatternUtils.flatten(c._1, c._2))
-      .map(c => pathResolver(c._1) -> c._2)
-      .collect{
-        case (Some(meta), value) => (Line(meta, value, None), false)
-      }
-      .via(Registry.registryFlow)
-      .map(lineMap => PrometheusRenderer.render(lineMap.values))
-      .toMat(Sink.fromGraph(new PullableSink[String]()))(Keep.both).run
-
-
-  private val connect: Connect =
-    appConf.mqtt.username.flatMap( username =>
-      appConf.mqtt.password.map( password =>
-        Connect("prom-mqtt", ConnectFlags.CleanSession,username, password)
-      )
-    ).getOrElse(Connect("prom-mqtt", ConnectFlags.CleanSession))
-
-  commands.offer(Command(connect))
-  appConf.patterns.foreach{ p =>
-    val topicToConnect = PatternUtils.topicFromPattern(p.pattern)
-    commands.offer(Command(Subscribe(topicToConnect)))
-    logger.info(s"Subscribe to '$topicToConnect' topic")
+  val source = appConf.selfMetrics.fold(
+    mqttHelper.getSource()
+  ){ mc =>
+    val smh = new SelfMetricsHelper(mc)
+    mqttHelper.getSource().merge(smh.uptimeSource, eagerComplete = true)
   }
 
+  val ((commands, done), pullable) = source.via(Registry.registryFlow)
+        .map(lineMap => PrometheusRenderer.render(lineMap.values))
+        .toMat(Sink.fromGraph(new PullableSink[String]()))(Keep.both).run
+
+  mqttHelper.startListening(commands)
 
   import akka.http.scaladsl.server.Directives._
   val routes: Route = get{
