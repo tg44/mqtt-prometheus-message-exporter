@@ -32,9 +32,9 @@ object Main extends App {
 
   val pathResolver: String => Option[MetricMeta] = PatternUtils.metaBuilder(appConf.patterns)
 
-  var mqttSessionSettings = MqttSessionSettings()
-  appConf.mqtt.maxPacketSize.foreach(maxPacketSize =>
-    mqttSessionSettings = mqttSessionSettings.withMaxPacketSize(maxPacketSize))
+  val mqttSessionSettings = appConf.mqtt.maxPacketSize
+    .map(maxPacketSize =>  MqttSessionSettings().withMaxPacketSize(maxPacketSize))
+    .getOrElse(MqttSessionSettings())
 
   val session = ActorMqttClientSession(mqttSessionSettings)
   val connection = Tcp().outgoingConnection(appConf.mqtt.host, appConf.mqtt.port)
@@ -62,10 +62,12 @@ object Main extends App {
 
 
   private val connect: Connect =
-    if (appConf.mqtt.username.isDefined && appConf.mqtt.password.isDefined)
-      Connect("prom-mqtt", ConnectFlags.CleanSession, appConf.mqtt.username.get, appConf.mqtt.password.get)
-    else
-      Connect("prom-mqtt", ConnectFlags.CleanSession)
+    appConf.mqtt.username.flatMap( username =>
+      appConf.mqtt.password.map( password =>
+        Connect("prom-mqtt", ConnectFlags.CleanSession,username, password)
+      )
+    ).getOrElse(Connect("prom-mqtt", ConnectFlags.CleanSession))
+
   commands.offer(Command(connect))
   appConf.patterns.foreach{ p =>
     val topicToConnect = PatternUtils.topicFromPattern(p.pattern)
