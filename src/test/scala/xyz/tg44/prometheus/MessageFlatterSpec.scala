@@ -24,6 +24,11 @@ class MessageFlatterSpec extends WordSpecLike with Matchers {
         "\"true\"" -> 1,
         "\"True\"" -> 1,
         "true" -> 1,
+        "\"y\"" -> 1,
+        "\"Y\"" -> 1,
+        "\"yes\"" -> 1,
+        "\"Yes\"" -> 1,
+        "\"YES\"" -> 1,
         "\"off\"" -> 0,
         "\"Off\"" -> 0,
         "\"OFF\"" -> 0,
@@ -31,6 +36,10 @@ class MessageFlatterSpec extends WordSpecLike with Matchers {
         "\"False\"" -> 0,
         "\"FALSE\"" -> 0,
         "false" -> 0,
+        "\"n\"" -> 0,
+        "\"N\"" -> 0,
+        "\"no\"" -> 0,
+        "\"NO\"" -> 0,
       )
       cases.foreach{ case (value, res) =>
         s"$value -> $res" in {
