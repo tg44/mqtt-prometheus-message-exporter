@@ -14,9 +14,21 @@ object PatternUtils {
   def isLabel(s: String): Boolean = (s.startsWith("<<") && s.endsWith(">>"))
   def isSyntax(s: String): Boolean = isPrefix(s) || isPrefixes(s) || isLabel(s)
 
+  def boolStringTrue(s: String): Boolean = {
+    val matchTo = "on" :: "true" :: Nil
+    matchTo.contains(s.toLowerCase)
+  }
+  def boolStringFalse(s: String): Boolean = {
+    val matchTo = "off" :: "false" :: Nil
+    matchTo.contains(s.toLowerCase)
+  }
+
   def flatten(topic: String, payload: String): List[(String, Double)] = {
     Try(payload.parseJson).toOption match {
       case Some(JsNumber(n)) => (topic -> n.doubleValue) :: Nil
+      case Some(JsBoolean(b)) => if(b) (topic -> 1d) :: Nil else (topic -> 0d) :: Nil
+      case Some(JsString(s)) if boolStringTrue(s) => (topic -> 1d) :: Nil
+      case Some(JsString(s)) if boolStringFalse(s) => (topic -> 0d) :: Nil
       case Some(o: JsObject) => flatten(o, topic)
       case _ => Nil
     }
@@ -24,9 +36,13 @@ object PatternUtils {
 
   def flatten(o: JsObject, acc: String): List[(String, Double)] = {
     o.fields.toList.flatMap{case (k, v) =>
+      val topic = s"$acc/$k"
       v match {
-        case JsNumber(n) => (s"$acc/$k" -> n.doubleValue) :: Nil
-        case o: JsObject => flatten(o, s"$acc/$k")
+        case JsNumber(n) => (topic -> n.doubleValue) :: Nil
+        case JsBoolean(b) => if(b) (topic -> 1d) :: Nil else (topic -> 0d) :: Nil
+        case JsString(s) if boolStringTrue(s) => (topic -> 1d) :: Nil
+        case JsString(s) if boolStringFalse(s) => (topic -> 0d) :: Nil
+        case o: JsObject => flatten(o, topic)
         case _ => Nil
       }
     }
