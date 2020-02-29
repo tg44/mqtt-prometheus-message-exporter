@@ -4,19 +4,17 @@ COPY project /app/project
 WORKDIR /app
 RUN sbt update test:update
 COPY . .
-RUN sbt compile test stage
+RUN sbt compile test stage && \
+    chmod -R u=rX,g=rX /app/target/universal/stage && \
+    chmod u+x,g+x /app/target/universal/stage/bin/mqtt-prometheus-message-exporter
 
-
-FROM openjdk:8
-WORKDIR /app
-COPY --from=builder /app/target/universal/stage /app
+FROM openjdk:8-alpine
 USER root
-RUN useradd --system --create-home --uid 1001 --gid 0 runnerusr && \
-    chmod -R u=rX,g=rX /app && \
-    chmod u+x,g+x /app/bin/mqtt-prometheus-message-exporter && \
-    chown -R 1001:root /app
+RUN apk add --update bash && \
+    rm -rf /var/cache/apk/* && \
+    adduser -S -u 1001 runnerusr
 USER 1001
-
 EXPOSE 9000
 ENTRYPOINT ["/app/bin/mqtt-prometheus-message-exporter"]
 CMD []
+COPY --from=builder --chown=1001:root /app/target/universal/stage /app
