@@ -37,8 +37,20 @@ We will end up with these paths:
 ```
 "my/thermostat/num" -> 10, 
 "my/thermostat/inner/num" -> 5, 
+"my/thermostat/inner/bool" -> 0, 
 "my/thermostat/so/deep/really/really" -> 8
 ```
+
+The app will parse:
+ - json numbers, as is
+ - json booleans to 0/1
+ - json strings to 0/1 if they follows https://yaml.org/type/bool.html
+ - json objects (as flattened)
+ 
+The app will drop:
+ - json null-s
+ - json strings which can't be converted to bools
+ - json arrays
 
 #### Pattern to prometheus metric
 The paths can be matched and converted to prometheus metrics with three operators:
