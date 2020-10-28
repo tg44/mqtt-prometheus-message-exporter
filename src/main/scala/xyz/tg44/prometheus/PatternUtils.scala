@@ -2,7 +2,6 @@ package xyz.tg44.prometheus
 
 import spray.json._
 import xyz.tg44.prometheus.Config.PatternConf
-import xyz.tg44.prometheus.exporter.Gauge
 import xyz.tg44.prometheus.exporter.Registry.MetricMeta
 
 import scala.annotation.tailrec
@@ -133,7 +132,7 @@ object PatternUtils {
       None
     } else {
       val sL = labels.map{case (k, v) => standardize(k) -> standardize(v)}
-      Option(MetricMeta(Gauge.mType, metricName, sL, "", None))
+      Option(MetricMeta("gauge", metricName, sL, "", None))
     }
   }
 

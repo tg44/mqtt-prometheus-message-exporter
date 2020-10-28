@@ -122,5 +122,5 @@ If you have any idea about the base functionality or the config/pattern syntax, 
 
 ## Prometheus exporter implementation
 I was trigger happy at the beginning and I implemented a closely complete prometheus exporter lib. 
-That is not used in the running app (or just a really small amount of it). If you are interested in a scala-prometheus exporter contact me (mail or twitter, or issue are both ok)!
+If you interested in it, you should check [tg44/prometheus-scala-exporter](https://github.com/tg44/prometheus-scala-exporter).
 
