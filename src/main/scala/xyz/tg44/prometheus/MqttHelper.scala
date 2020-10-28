@@ -2,15 +2,13 @@ package xyz.tg44.prometheus
 
 import akka.Done
 import akka.actor.ActorSystem
-import akka.custom.PullableSink
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.stream.alpakka.mqtt.streaming.{Command, Connect, ConnectFlags, Event, MqttSessionSettings, Publish, Subscribe}
 import akka.stream.alpakka.mqtt.streaming.scaladsl.{ActorMqttClientSession, Mqtt}
-import akka.stream.scaladsl.{Keep, Sink, SinkQueueWithCancel, Source, SourceQueueWithComplete, Tcp}
+import akka.stream.scaladsl.{Keep, Source, SourceQueueWithComplete, Tcp}
 import akka.util.ByteString
 import org.slf4j.LoggerFactory
 import xyz.tg44.prometheus.Config.AppConfig
-import xyz.tg44.prometheus.exporter.{PrometheusRenderer, Registry}
 import xyz.tg44.prometheus.exporter.Registry.{Line, MetricMeta}
 
 import scala.concurrent.Future

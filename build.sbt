@@ -18,9 +18,8 @@ libraryDependencies ++= {
     "com.typesafe.akka"  %% "akka-actor-typed"     % akkaV,
     "com.typesafe.akka"  %% "akka-stream"          % akkaV,
     "com.typesafe.akka"  %% "akka-stream-typed"    % akkaV,
-    "com.lightbend.akka" %% "akka-stream-alpakka-mqtt-streaming" % "2.0.0-M2+4-ade65897",
+    "com.lightbend.akka" %% "akka-stream-alpakka-mqtt-streaming" % "2.0.2",
     //misc
-    "org.typelevel"         %% "cats-effect" % "2.0.0",
     "com.github.pureconfig" %% "pureconfig"  % "0.11.1",
     "org.scalatest"           %% "scalatest"      % "3.0.8" % Test,
     //logging
