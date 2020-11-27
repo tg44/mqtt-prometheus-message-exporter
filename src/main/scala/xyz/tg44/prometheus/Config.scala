@@ -35,12 +35,12 @@ object Config {
 
   import spray.json.DefaultJsonProtocol._
   case class AppConfig(mqtt: MqttConfig, patterns: Seq[PatternConf], selfMetrics: Option[SelfMetricsConfig])
-  case class MqttConfig(host: String, port: Int, username: Option[String], password: Option[String], maxPacketSize: Option[Int])
+  case class MqttConfig(host: String, port: Int, useTls: Option[Boolean], username: Option[String], password: Option[String], maxPacketSize: Option[Int])
   case class PatternConf(prefix: String, pattern: String)
   case class SelfMetricsConfig(prefix: String)
 
   implicit val patternConfigFormat: RootJsonFormat[PatternConf] = jsonFormat2(PatternConf)
-  implicit val mqttConfigFormat: RootJsonFormat[MqttConfig] = jsonFormat5(MqttConfig)
+  implicit val mqttConfigFormat: RootJsonFormat[MqttConfig] = jsonFormat6(MqttConfig)
   implicit val selfMetricsConfigFormat: RootJsonFormat[SelfMetricsConfig] = jsonFormat1(SelfMetricsConfig)
   implicit val appConfigFormat: RootJsonFormat[AppConfig] = jsonFormat3(AppConfig)
 }
