@@ -84,12 +84,8 @@ object PatternUtils {
     @tailrec
     def rec(patterns: List[String], paths: List[String], metrics: List[String], labels: Map[String, String]): Option[MetricMeta] = {
       patterns match {
-        case h :: Nil if paths.size > 1 =>
-          if(isPrefixes(h)) {
-            buildValidMeta(metrics.reverse ++ paths, labels)
-          } else {
-            None
-          }
+        case h :: Nil if paths.nonEmpty && isPrefixes(h) =>
+          buildValidMeta(metrics.reverse ++ paths, labels)
         case h :: t =>
           if(isPrefix(h)) {
             rec(t, paths.tail, paths.head :: metrics, labels)

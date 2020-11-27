@@ -116,6 +116,7 @@ mqtt-prom-exp:
 
 With the config above the metrics will be available at `localhost:9324/metrics`.
 
+Local testing `docker run -p 9324:9000 -v ${PWD}/example.conf:/app/exporter.conf -e CONF_PATH=/app/exporter.conf tg44/mqtt-prometheus-message-exporter`
 
 ## Contribution
 If you have any idea about the base functionality or the config/pattern syntax, just start a new issue/pr and we can talk about the use-cases, pros and cons!

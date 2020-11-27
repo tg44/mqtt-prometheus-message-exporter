@@ -1,7 +1,6 @@
 package xyz.tg44.prometheus
 
 import org.scalatest.{Matchers, WordSpecLike}
-import xyz.tg44.prometheus.exporter.Gauge
 import xyz.tg44.prometheus.exporter.Registry.MetricMeta
 
 class TopicParserSpec extends WordSpecLike with Matchers {
@@ -18,7 +17,7 @@ class TopicParserSpec extends WordSpecLike with Matchers {
   )
 
   def createMetricMetaForTest(name: String, labels: Map[String, String]) = {
-    MetricMeta(Gauge.mType, name, labels, "", None)
+    MetricMeta("gauge", name, labels, "", None)
   }
 
   val singlePart = TestCaseHelper("singlePart", "topic", "topic", "topic", "", None)
@@ -33,11 +32,13 @@ class TopicParserSpec extends WordSpecLike with Matchers {
   val singleLableAndPrefix2 = TestCaseHelper("singleLableAndPrefix2", "topic/<<owner>>/[[prefix]]", "topic/#", "topic/test/STAT", "", Some(createMetricMetaForTest("stat", Map("owner" -> "test"))))
   val multiPrefix1 = TestCaseHelper("multiPrefix1", "topic/[[prefixes]]", "topic/#", "topic/test/STAT", "", Some(createMetricMetaForTest("test_stat", Map.empty)))
   val multiPrefix2 = TestCaseHelper("multiPrefix2", "topic/[[prefixes]]", "topic/#", "topic/test/STAT/other", "", Some(createMetricMetaForTest("test_stat_other", Map.empty)))
+  val singlePrefix2= TestCaseHelper("singlePrefix2", "topic/[[prefixes]]", "topic/#", "topic/test", "", Some(createMetricMetaForTest("test", Map.empty)))
   val topicOptimization = TestCaseHelper("topicOptimization", "topic/other/|/stat", "topic/other", "topic/other/stat", "pf", Some(createMetricMetaForTest("pf", Map.empty)))
   val topicOptimizationNonMatching = TestCaseHelper("topicOptimizationNonMatching", "topic/other/|/stat", "topic/other", "topic/other/stat2", "pf", None)
   val topicOptimizationWithLabel = TestCaseHelper("topicOptimizationWithLabel", "topic/<<device>>/stat/|/stat", "topic/+/stat", "topic/other/stat/stat", "pf", Some(createMetricMetaForTest("pf", Map("device" -> "other"))))
   val topicOptimizationMultipleWithLabel = TestCaseHelper("topicOptimizationMultipleWithLabel", "topic/<<device>>/<<owner>>/|/stat", "topic/+/+", "topic/other/stat/stat", "pf", Some(createMetricMetaForTest("pf", Map("device" -> "other", "owner" -> "stat"))))
-
+  val topicOptimizationWithPrefixes = TestCaseHelper("topicOptimizationWithPrefixes", "topic/[[prefix]]/|/[[prefixes]]", "topic/+", "topic/other/stat/stat", "pf", Some(createMetricMetaForTest("pf_other_stat_stat", Map.empty)))
+  val topicOptimizationWithPrefixesAndLabel = TestCaseHelper("topicOptimizationWithPrefixesAndLabel", "topic/<<device>>/[[prefix]]/|/[[prefixes]]", "topic/+/+", "topic/other/stat1/stat2/stat3", "pf", Some(createMetricMetaForTest("pf_stat1_stat2_stat3", Map("device" -> "other"))))
 
   val testCases = Seq(
     singlePart,
@@ -52,10 +53,13 @@ class TopicParserSpec extends WordSpecLike with Matchers {
     singleLableAndPrefix2,
     multiPrefix1,
     multiPrefix2,
+    singlePrefix2,
     topicOptimization,
     topicOptimizationNonMatching,
     topicOptimizationWithLabel,
     topicOptimizationMultipleWithLabel,
+    topicOptimizationWithPrefixes,
+    topicOptimizationWithPrefixesAndLabel,
   )
   "topic parsing" should {
     testCases.foreach { c =>
