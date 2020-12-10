@@ -56,21 +56,23 @@ The app will drop:
 The paths can be matched and converted to prometheus metrics with three operators:
  - `[[prefix]]` will use the matching segment in the metric name
  - `[[prefixes]]` should be only in tail position and it will use all the remaining segments in the metric name
+ - `[[any]]` will match to any segment and "drops" it
  - `<<label>>` will create a label with the name name of `label` and the walue will be the path sagment
  
 Examples for the path of `my/thermostat/so/deep/really/really`: 
- - `my/[[segment]]/so/deep/really/really` will be a metric named `thermostat`
- - `my/<<device>>/[[segment]]/deep/really/[[segment]]` will be a metric named `so_really` with a label `{device=thermostat}`
- - `my/<<device>>/[[segment]]/deep` will not match and will be dropped
- - `my/<<device>>/[[segment]]/deep/[[segments]]` will be a metric named `so_really_really` with a label `{device=thermostat}`
+ - `my/[[prefix]]/so/deep/really/really` will be a metric named `thermostat`
+ - `my/[[prefix]]/so/[[any]]/really/[[any]]` will be a metric named `thermostat`
+ - `my/<<device>>/[[prefix]]/deep/really/[[prefix]]` will be a metric named `so_really` with a label `{device=thermostat}`
+ - `my/<<device>>/[[prefix]]/deep` will not match and will be dropped
+ - `my/<<device>>/[[prefix]]/deep/[[prefixes]]` will be a metric named `so_really_really` with a label `{device=thermostat}`
 
 #### Subscribe optimization syntax in patterns:
 The app will try to optimize the subscriptions. If you add the pattern `my/thermostat` it will subscribe to `my/#`.
 If you have a pattern like `my/<<device>>/[[segment]]/deep/[[segments]]` and you only interested the topics which has three segments you can help with adding a pipe segment.
 
 Examples:
- - `my/<<device>>/[[segment]]/deep/[[segments]]` subscribes to `my/#`
- - `my/<<device>>/[[segment]]/|/deep/[[segments]]` subscribes to `my/+/+` (and will match like the previous one)
+ - `my/<<device>>/[[prefix]]/deep/[[prefixes]]` subscribes to `my/#`
+ - `my/<<device>>/[[prefix]]/|/deep/[[prefixes]]` subscribes to `my/+/+` (and will match like the previous one)
 
 #### Other notes:
  - You should add a prefix to every pattern (check the config)!
@@ -83,13 +85,15 @@ Examples:
  - `/` in topic names, or in json keys are untested and I think it should not work.
  - `|` is a bad topic name or json key, pls don't use it and the parser will be happy :D
  - topicnames with starting `<<` and ending `>>` are cursed, you can match them as a segment
- - topicnames with the exact `[[segment]]` and `[[segments]]` name are cursed too, they will go to the metric name as `segment` and `segments`
+ - topicnames with the exact `[[prefix]]` and `[[prefixes]]` name are cursed too, they will go to the metric name as `prefix` and `prefixes`
  - if you have other use-case or idea pls open an issue 
 
 ## Config:
 For example config check the example.conf!
 
 `mqtt.username`/`mqtt.password` are not required. If you miss one of these fields the app will try to connect as an unauthenticated/guest client.
+
+`mqtt.useTls` are not required. If you have a non self-signed TLS enaled endpoint switching this to true should work.
 
 `mqtt.maxPacketSize` are not required. The default value is 4096.
 

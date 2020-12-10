@@ -8,10 +8,11 @@ import scala.annotation.tailrec
 import scala.util.Try
 
 object PatternUtils {
+  def isAny(s: String): Boolean = (s == "[[any]]")
   def isPrefix(s: String): Boolean = (s == "[[prefix]]")
   def isPrefixes(s: String): Boolean = (s == "[[prefixes]]")
   def isLabel(s: String): Boolean = (s.startsWith("<<") && s.endsWith(">>"))
-  def isSyntax(s: String): Boolean = isPrefix(s) || isPrefixes(s) || isLabel(s)
+  def isSyntax(s: String): Boolean = isAny(s) || isPrefix(s) || isPrefixes(s) || isLabel(s)
 
   def boolStringTrue(s: String): Boolean = {
     val matchTo = "on" :: "true" :: "y" :: "yes" :: Nil
@@ -53,7 +54,7 @@ object PatternUtils {
       splitted
         .takeWhile(_ != "|")
         .map( p =>
-          if(isLabel(p) || isPrefix(p)) {
+          if(isLabel(p) || isPrefix(p) || isAny(p)) {
             "+"
           } else {
             p
@@ -92,6 +93,8 @@ object PatternUtils {
           } else if(isLabel(h)) {
             val label = h.drop(2).dropRight(2)
             rec(t, paths.tail, metrics, labels + (label -> paths.head))
+          } else if(isAny(h)) {
+            rec(t, paths.tail, metrics, labels)
           } else if(h == paths.head){
             rec(t, paths.tail, metrics, labels)
           } else {

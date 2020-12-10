@@ -26,6 +26,7 @@ class TopicParserSpec extends WordSpecLike with Matchers {
   val nonMatchingPath1 = TestCaseHelper("nonMatchingPath1", "topic/metric", "topic/#", "topic/metricc", "pf", None)
   val nonMatchingPath2 = TestCaseHelper("nonMatchingPath2", "topic/metric", "topic/#", "t", "pf", None)
   val singlePrefix = TestCaseHelper("singlePrefix", "topic/[[prefix]]", "topic/#", "topic/metric", "", Some(createMetricMetaForTest("metric", Map.empty)))
+  val singleAny = TestCaseHelper("singleAny", "topic/[[any]]", "topic/#", "topic/metric", "pf", Some(createMetricMetaForTest("pf", Map.empty)))
   val singlePrefixWithDefaultPrefix = TestCaseHelper("singlePrefixWithDefaultPrefix", "topic/[[prefix]]", "topic/#", "topic/metric", "pf", Some(createMetricMetaForTest("pf_metric", Map.empty)))
   val singleLableAndPrefixNonMatching = TestCaseHelper("singleLableAndPrefixNonMatching", "topic/<<device>>/[[prefix]]", "topic/#", "topic/metric", "pf", None)
   val singleLableAndPrefix1 = TestCaseHelper("singleLableAndPrefix1", "topic/<<device>>/[[prefix]]", "topic/#", "topic/test/STAT", "", Some(createMetricMetaForTest("stat", Map("device" -> "test"))))
@@ -47,6 +48,7 @@ class TopicParserSpec extends WordSpecLike with Matchers {
     nonMatchingPath1,
     nonMatchingPath2,
     singlePrefix,
+    singleAny,
     singlePrefixWithDefaultPrefix,
     singleLableAndPrefixNonMatching,
     singleLableAndPrefix1,
