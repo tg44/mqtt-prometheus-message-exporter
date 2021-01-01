@@ -5,20 +5,20 @@ import akka.actor.ActorSystem
 import akka.stream.{Materializer, OverflowStrategy, TLSClientAuth, TLSProtocol, TLSRole}
 import akka.stream.alpakka.mqtt.streaming.{Command, Connect, ConnectFlags, Event, MqttSessionSettings, Publish, Subscribe}
 import akka.stream.alpakka.mqtt.streaming.scaladsl.{ActorMqttClientSession, Mqtt}
-import akka.stream.scaladsl.{BidiFlow, Flow, Keep, Source, SourceQueueWithComplete, TLS, Tcp}
+import akka.stream.scaladsl.{BidiFlow, Flow, Keep, Sink, Source, SourceQueueWithComplete, TLS, Tcp}
 import akka.util.ByteString
 import com.typesafe.sslconfig.akka.AkkaSSLConfig
+
 import javax.net.ssl.{KeyManager, SSLContext, X509TrustManager}
 import java.security.cert.X509Certificate
-
 import com.typesafe.sslconfig.ssl.ClientAuth
 import org.slf4j.LoggerFactory
 import xyz.tg44.prometheus.Config.AppConfig
 import xyz.tg44.prometheus.exporter.Registry.{Line, MetricMeta}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class MqttHelper(appConf: AppConfig)(implicit system: ActorSystem, materializer: Materializer) {
+class MqttHelper(appConf: AppConfig)(implicit system: ActorSystem, materializer: Materializer, executionContext: ExecutionContext) {
 
   private val clientName = "prom-mqtt"
   private val logger = LoggerFactory.getLogger("MqttFlow")
@@ -38,7 +38,7 @@ class MqttHelper(appConf: AppConfig)(implicit system: ActorSystem, materializer:
     }
 
     Source
-      .queue(2, OverflowStrategy.fail)
+      .queue(2, OverflowStrategy.backpressure)
       .via(
         Mqtt
           .clientSessionFlow(session, ByteString(clientName))
@@ -66,11 +66,12 @@ class MqttHelper(appConf: AppConfig)(implicit system: ActorSystem, materializer:
       ).getOrElse(Connect(clientName, ConnectFlags.CleanSession))
 
     commands.offer(Command(connect))
-    appConf.patterns.foreach { p =>
+    Source(appConf.patterns.toList).mapAsync(1){ p =>
       val topicToConnect = PatternUtils.topicFromPattern(p.pattern)
-      commands.offer(Command(Subscribe(topicToConnect)))
-      logger.info(s"Subscribe to '$topicToConnect' topic")
-    }
+      val ret = commands.offer(Command(Subscribe(topicToConnect)))
+      ret.foreach(_ => logger.info(s"Subscribe to '$topicToConnect' topic"))
+      ret
+    }.runWith(Sink.ignore)
   }
 
   //https://stackoverflow.com/a/43264311
