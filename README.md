@@ -1,4 +1,6 @@
-[![Docker Build Status](https://img.shields.io/docker/cloud/build/tg44/mqtt-prometheus-message-exporter?style=flat-square)](https://hub.docker.com/r/tg44/mqtt-prometheus-message-exporter)
+[![Build](https://img.shields.io/github/workflow/status/tg44/mqtt-prometheus-message-exporter/ci)](https://github.com/tg44/mqtt-prometheus-message-exporter/actions/workflows/build-and-publish.yaml)
+[![DockerImage](https://img.shields.io/badge/docker-latest-brightgreen?style=flat-square)](https://github.com/tg44/mqtt-prometheus-message-exporter/pkgs/container/mqtt-prometheus-message-exporter)
+[![Docker Hub](https://img.shields.io/badge/docker_hub-latest-brightgreen?style=flat-square)](https://hub.docker.com/r/tg44/mqtt-prometheus-message-exporter)
 
 # MQTT Prometheus Message Exporter
 
@@ -86,7 +88,11 @@ Examples:
  - `|` is a bad topic name or json key, pls don't use it and the parser will be happy :D
  - topicnames with starting `<<` and ending `>>` are cursed, you can match them as a segment
  - topicnames with the exact `[[prefix]]` and `[[prefixes]]` name are cursed too, they will go to the metric name as `prefix` and `prefixes`
- - if you have other use-case or idea pls open an issue 
+ - `"` character is removed from label values
+ - label names starting with `__` could behave as not expected (they are reserved for prometheus internal according to the [docs](https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels))
+ - non valid metric names and metric labels will be prefixed with `_x_`, and the non-valid characters will be replaced to `_`
+   if you see something like this try to follow the [official prometheus docs](https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels) with your namings
+ - if you have other use-case or idea pls open an issue
 
 ## Config:
 For example config check the example.conf!
@@ -109,7 +115,7 @@ Compose file example:
 ```
 mqtt-prom-exp:
     restart: unless-stopped
-    image: tg44/mqtt-prometheus-message-exporter
+    image: ghcr.io/tg44/mqtt-prometheus-message-exporter
     volumes:
       - /hdd/docker/mosquitto/config/exporter.conf:/app/exporter.conf
     ports:
@@ -120,7 +126,12 @@ mqtt-prom-exp:
 
 With the config above the metrics will be available at `localhost:9324/metrics`.
 
-Local testing `docker run -p 9324:9000 -v ${PWD}/example.conf:/app/exporter.conf -e CONF_PATH=/app/exporter.conf tg44/mqtt-prometheus-message-exporter`
+Local testing `docker run -p 9324:9000 -v ${PWD}/example.conf:/app/exporter.conf -e CONF_PATH=/app/exporter.conf ghcr.io/tg44/mqtt-prometheus-message-exporter`
+
+## Breaking changes
+- 2021.11.13
+  - we will permanently move away from dockerhub, the latest images will be pushed, but the documentation and the other infos will only be updated here
+    - DH freezes the free builds, while GH-Actions not only build free, but gives us public repositories too
 
 ## Contribution
 If you have any idea about the base functionality or the config/pattern syntax, just start a new issue/pr and we can talk about the use-cases, pros and cons!

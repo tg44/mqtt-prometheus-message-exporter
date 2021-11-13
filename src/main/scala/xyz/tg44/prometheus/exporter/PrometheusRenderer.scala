@@ -5,17 +5,32 @@ import xyz.tg44.prometheus.exporter.Registry.Line
 object PrometheusRenderer {
 
   def render(lines: Iterable[Line]): String = {
-    //TODO missing escaping and label/name checks
     def renderLabels(labels: Seq[(String, String)]) = {
+      val regexp = "[a-zA-Z_][a-zA-Z0-9_]*" // from https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
       if(labels.nonEmpty) {
-        labels.map { case (k, v) => s"""$k="$v"""" }.mkString("{", ",", "}")
+        labels.map { case (k, v) =>
+          val value = v.replace("\"", "")
+          if(k.matches(regexp)) {
+            s"""$k="$value""""
+          } else {
+            val key = "_x_" + k.replaceAll("[^a-zA-Z0-9_]+", "_")
+            s"""$key="$value""""
+          }
+        }.mkString("{", ",", "}")
       } else {
         ""
       }
     }
 
     def renderLine(t: Line): String = {
-      s"${t.meta.name}${renderLabels(t.meta.labels.toSeq)} ${t.value}${t.timeStamp.map(ts => s" $ts").getOrElse("")}"
+      val regexp = "[a-zA-Z_:][a-zA-Z0-9_:]*" // from https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+      val name =
+        if(t.meta.name.matches(regexp)) {
+          t.meta.name
+        } else {
+        "_x_" + t.meta.name.replaceAll("[^a-zA-Z0-9_:]+", "_")
+      }
+      s"${name}${renderLabels(t.meta.labels.toSeq)} ${t.value}${t.timeStamp.map(ts => s" $ts").getOrElse("")}"
     }
 
     lines.groupBy(_.meta.group).toSeq.flatMap {
