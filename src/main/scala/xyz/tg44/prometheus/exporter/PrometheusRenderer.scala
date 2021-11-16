@@ -23,14 +23,16 @@ object PrometheusRenderer {
     }
 
     def renderLine(t: Line): String = {
+      s"${fixName(t.meta.name)}${renderLabels(t.meta.labels.toSeq)} ${t.value}${t.timeStamp.map(ts => s" $ts").getOrElse("")}"
+    }
+
+    def fixName(name: String) = {
       val regexp = "[a-zA-Z_:][a-zA-Z0-9_:]*" // from https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
-      val name =
-        if(t.meta.name.matches(regexp)) {
-          t.meta.name
-        } else {
-        "_x_" + t.meta.name.replaceAll("[^a-zA-Z0-9_:]+", "_")
+      if(name.matches(regexp)) {
+        name
+      } else {
+        "_x_" + name.replaceAll("[^a-zA-Z0-9_:]+", "_")
       }
-      s"${name}${renderLabels(t.meta.labels.toSeq)} ${t.value}${t.timeStamp.map(ts => s" $ts").getOrElse("")}"
     }
 
     lines.groupBy(_.meta.group).toSeq.flatMap {
@@ -39,15 +41,15 @@ object PrometheusRenderer {
           val mt = head.meta.mType
           val description = head.meta.description
           Seq(
-            s"# HELP $g $description",
-            s"# TYPE $g $mt",
+            s"# HELP ${fixName(g)} $description",
+            s"# TYPE ${fixName(g)} $mt",
           ) ++ vl.map(renderLine)
         }
       case (None, vl: Seq[Line]) if vl.nonEmpty =>
         vl.flatMap(t =>
           Seq(
-            s"# HELP ${t.meta.name} ${t.meta.description}",
-            s"# TYPE ${t.meta.name} ${t.meta.mType}",
+            s"# HELP ${fixName(t.meta.name)} ${t.meta.description}",
+            s"# TYPE ${fixName(t.meta.name)} ${t.meta.mType}",
             renderLine(t)
           )
         )
