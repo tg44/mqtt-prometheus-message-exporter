@@ -1,4 +1,4 @@
-FROM hseeberger/scala-sbt:8u222_1.3.6_2.13.1 as builder
+FROM hseeberger/scala-sbt:17.0.1_1.5.6_2.13.7 as builder
 COPY build.sbt /app/build.sbt
 COPY project /app/project
 WORKDIR /app
@@ -8,7 +8,7 @@ RUN sbt compile test stage && \
     chmod -R u=rX,g=rX /app/target/universal/stage && \
     chmod u+x,g+x /app/target/universal/stage/bin/mqtt-prometheus-message-exporter
 
-FROM openjdk:8-alpine
+FROM eclipse-temurin:17-alpine
 USER root
 RUN apk add --update bash && \
     rm -rf /var/cache/apk/* && \
