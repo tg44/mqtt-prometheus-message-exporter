@@ -46,7 +46,7 @@ We will end up with these paths:
 The app will parse:
  - json numbers, as is
  - json booleans to 0/1
- - json strings to 0/1 if they follows https://yaml.org/type/bool.html
+ - json strings to 0/1 if they follows https://yaml.org/type/bool.html (+online/offline)
  - json objects (as flattened)
  
 The app will drop:

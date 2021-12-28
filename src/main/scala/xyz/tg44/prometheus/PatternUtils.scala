@@ -15,11 +15,11 @@ object PatternUtils {
   def isSyntax(s: String): Boolean = isAny(s) || isPrefix(s) || isPrefixes(s) || isLabel(s)
 
   def boolStringTrue(s: String): Boolean = {
-    val matchTo = "on" :: "true" :: "y" :: "yes" :: Nil
+    val matchTo = "on" :: "true" :: "y" :: "yes" :: "online" :: Nil
     matchTo.contains(s.toLowerCase)
   }
   def boolStringFalse(s: String): Boolean = {
-    val matchTo = "off" :: "false" :: "n" :: "no" :: Nil
+    val matchTo = "off" :: "false" :: "n" :: "no" :: "offline" :: Nil
     matchTo.contains(s.toLowerCase)
   }
 
